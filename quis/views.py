@@ -9,14 +9,14 @@ from django.views.decorators.http import require_http_methods
 
 
 # TODO: cache invididual watchman responses
-# TODO: indicate age of watchman responses
+# TODO: indicate age of cached watchman responses
 # TODO: mechanism to bubble up details from individual services?
-# TODO: would list of (env, project, result) be easier to handle?
 
 
 @require_http_methods(['GET'])
 def index(request):
     config = settings.WATCHMEN
+    watchmen = []
     with futures.ThreadPoolExecutor(max_workers=5) as executor:
         future_to_bucket = {}
         for env in config:
@@ -24,20 +24,17 @@ def index(request):
                 future = executor.submit(get_watchman_data, url)
                 future_to_bucket[future] = (env, project)
 
-        watchmen = collections.defaultdict(list)
         for future in futures.as_completed(future_to_bucket):
             env, project = future_to_bucket[future]
             try:
-                result = future.result()
+                services = future.result()
             except Exception as e:
                 logger.exception('unable to get status for %s, %s',
                                  env, project)
-                result = []
-            watchmen[env].append((project, result))
-
-    for env in watchmen:
-        watchmen[env].sort()
-    return render(request, 'quis/index.html', {'watchmen': dict(watchmen)})
+                services = []
+            watchmen.append({'env': env, 'project': project, 'services': services})
+    watchmen.sort(key=lambda x: (x['env'], x['project']))
+    return render(request, 'quis/index.html', {'watchmen': watchmen})
 
 
 def get_watchman_data(url):

@@ -34,10 +34,16 @@
   <body>
     <div class="container-fluid">
       <div class="center-block">
-        {% for env_name, env in watchmen.iteritems %}
+        {% regroup watchmen by env as env_list %}
+        {% for env in env_list %}
+        {% comment %}
+           env.grouper is environment name,
+           env.list is list of watchmen dicts in that environment,
+           watchman dict looks like {env: 'a', project: 'b', services: [...]
+        {% endcomment %}
         <div class="row">
           <div class="panel
-                      {% if env|env_ok %}
+                      {% if env.list|env_ok %}
                       panel-success
                       {% else %}
                       panel-danger
@@ -45,15 +51,15 @@
                       col-md-10 col-md-offset-1">
             <div class="panel-heading"
                  data-toggle="collapse"
-                 data-target="#collapse-{{env_name}}"
+                 data-target="#collapse-{{env.grouper}}"
                  aria-expanded="false"
-                 aria-controls="collapse-{{env_name}}">
-              {{env_name}}
+                 aria-controls="collapse-{{env.grouper}}">
+              {{env.grouper}}
             </div>
-            {% for project, services in env %}
-            <div class="panel-body collapse" id="collapse-{{env_name}}">
+            <div class="panel-body collapse" id="collapse-{{env.grouper}}">
+              {% for item in env.list %}
               <div class="panel
-                          {% if services|services_ok %}
+                          {% if item.services|services_ok %}
                           panel-success
                           {% else %}
                           panel-danger
@@ -61,22 +67,22 @@
                           ">
                 <div class="panel-heading"
                      data-toggle="collapse"
-                     data-target="#collapse-{{env_name}}-{{project}}"
+                     data-target="#collapse-{{env.grouper}}-{{item.project}}"
                      aria-expanded="true"
-                     aria-controls="collapse-{{env_name}}-{{project}}">
-                  {{project}}
+                     aria-controls="collapse-{{env.grouper}}-{{item.project}}">
+                  {{item.project}}
                 </div>
-                <div class="collapse in" id="collapse-{{env_name}}-{{project}}">
-                  {% if services %}
+                <div class="collapse in" id="collapse-{{env.grouper}}-{{item.project}}">
+                  {% if item.services %}
                   <table class="table" style="margin-bottom: 0px;">
                     <tbody>
-                      {% for check in services %}
-                      <tr {% if not check.ok %}class="danger"{% endif %}>
-                        <td>{{check.name}}</td>
+                      {% for service in item.services %}
+                      <tr {% if not service.ok %}class="danger"{% endif %}>
+                        <td>{{service.name}}</td>
                         <td>
-                          {% if check.details %}
+                          {% if service.details %}
                           <table class="table">
-                            {% for key, value in check.details.iteritems %}
+                            {% for key, value in service.details.iteritems %}
                             <tr>
                               <th>{{key}}</th>
                               <td>
@@ -86,7 +92,7 @@
                             {% endfor %}
                           </table>
                           {% else %}
-                          {% if not check.ok %}not {% endif %}ok
+                          {% if not service.ok %}not {% endif %}ok
                           {% endif %}
                       </tr>
                       {% endfor %}
@@ -94,15 +100,15 @@
                   </table>
                   {% else %}
                   <div class="panel-body">
-                    <p class="alert alert-danger" role="alert">
+                    <p class="alert alert-danger" role="alert" style="margin-bottom: 0px;">
                     Unable to retrieve watchman results
                     </p>
                   </div>
                   {% endif %}
                 </div>
               </div>
+              {% endfor %}
             </div>
-            {% endfor %}
           </div>
         </div>
         {% empty %}
