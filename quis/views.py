@@ -1,16 +1,26 @@
 import collections
+import logging
 import warnings
 from concurrent import futures
 
+import redis
 import requests
+import cachecontrol
+from cachecontrol.caches import RedisCache
 from django.conf import settings
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 
 
-# TODO: cache invididual watchman responses
-# TODO: indicate age of cached watchman responses
 # TODO: mechanism to bubble up details from individual services?
+
+# set up logger and requests session cache
+logger = logging.getLogger(__name__)
+pool = redis.ConnectionPool(host=settings.REDIS_HOST)
+                            port=settings.REDIS_PORT,
+cache = RedisCache(redis.Redis(connection_pool=pool))
+session = cachecontrol.CacheControl(requests.Session(), cache)
+session.verify = False
 
 
 @require_http_methods(['GET'])
@@ -51,7 +61,7 @@ def get_watchman_data(url):
     try:
         with warnings.catch_warnings(
                 requests.packages.urllib3.exceptions.InsecureRequestWarning):
-            response = requests.get(url, verify=False, timeout=5)
+            response = session.get(url, timeout=5)
         watchman = response.json()
     except requests.exceptions.RequestException:
         watchman = {}
