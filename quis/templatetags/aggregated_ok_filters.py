@@ -4,8 +4,11 @@ register = template.Library()
 
 @register.filter
 def services_ok(services):
-    return all(s['ok'] for s in services)
+    # treat empty services as a failure
+    return all(s['ok'] for s in services) if services else False
 
 @register.filter
 def env_ok(env):
-    return all(all(s['ok'] for s in services) for _, services in env)
+    # treat empty services as a failure
+    return all(all(s['ok'] for s in services) if services else False
+                   for _, services in env)
