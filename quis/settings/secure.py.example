@@ -10,4 +10,14 @@ SECURE_SETTINGS = {
     'db_default_name': 'quis',
     'db_default_user': 'quis',
     'db_default_password': 'quis',
+    'watchmen': {
+        'dev': {
+            'service-a': 'https://servicea.dev.example.edu/watchman/',
+            'service-b': 'https://serviceb.dev.example.edu/watchman/',
+        },
+        'prod': {
+            'service-a': 'https://servicea.example.edu/watchman/',
+            'service-b': 'https://serviceb.example.edu/watchman/',
+        },
+    },
 }

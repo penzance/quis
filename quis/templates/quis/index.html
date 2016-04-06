@@ -1,0 +1,115 @@
+{% load aggregated_ok_filters %}
+
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charse="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>quis</title>
+
+    <!-- jquery -->
+    <script src="https://code.jquery.com/jquery-2.2.2.min.js"></script>
+
+    <!-- bootstrap -->
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet"
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+          integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7"
+          crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet"
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css"
+          integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r"
+          crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"
+            integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS"
+            crossorigin="anonymous">
+    </script>
+  </head>
+
+  <body>
+    <div class="container-fluid">
+      <div class="center-block">
+        {% for env_name, env in watchmen.iteritems %}
+        <div class="row">
+          <div class="panel
+                      {% if env|env_ok %}
+                      panel-success
+                      {% else %}
+                      panel-danger
+                      {% endif %}
+                      col-md-10 col-md-offset-1">
+            <div class="panel-heading"
+                 data-toggle="collapse"
+                 data-target="#collapse-{{env_name}}"
+                 aria-expanded="false"
+                 aria-controls="collapse-{{env_name}}">
+              {{env_name}}
+            </div>
+            {% for project, services in env %}
+            <div class="panel-body collapse" id="collapse-{{env_name}}">
+              <div class="panel
+                          {% if services|services_ok %}
+                          panel-success
+                          {% else %}
+                          panel-danger
+                          {% endif %}
+                          ">
+                <div class="panel-heading"
+                     data-toggle="collapse"
+                     data-target="#collapse-{{env_name}}-{{project}}"
+                     aria-expanded="true"
+                     aria-controls="collapse-{{env_name}}-{{project}}">
+                  {{project}}
+                </div>
+                <div class="collapse in" id="collapse-{{env_name}}-{{project}}">
+                  {% if services %}
+                  <table class="table" style="margin-bottom: 0px;">
+                    <tbody>
+                      {% for check in services %}
+                      <tr {% if not check.ok %}class="danger"{% endif %}>
+                        <td>{{check.name}}</td>
+                        <td>
+                          {% if check.details %}
+                          <table class="table">
+                            {% for key, value in check.details.iteritems %}
+                            <tr>
+                              <th>{{key}}</th>
+                              <td>
+                                <pre>{{value}}</pre>
+                              </td>
+                            </tr>
+                            {% endfor %}
+                          </table>
+                          {% else %}
+                          {% if not check.ok %}not {% endif %}ok
+                          {% endif %}
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                  {% else %}
+                  <div class="panel-body">
+                    <p class="alert alert-danger" role="alert">
+                    Unable to retrieve watchman results
+                    </p>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% empty %}
+        <h2 class="alert alert-danger" role="alert">
+          No environments found in config.
+        </h2>
+        {% endfor %}
+      </div>
+  </body>
+</html>

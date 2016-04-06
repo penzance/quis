@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'quis',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -191,3 +192,4 @@ LOGGING = {
 }
 
 # Other project specific settings
+WATCHMEN = SECURE_SETTINGS['watchmen']
