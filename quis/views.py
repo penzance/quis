@@ -16,8 +16,8 @@ from django.views.decorators.http import require_http_methods
 
 # set up logger and requests session cache
 logger = logging.getLogger(__name__)
-pool = redis.ConnectionPool(host=settings.REDIS_HOST)
-                            port=settings.REDIS_PORT,
+pool = redis.ConnectionPool(host=settings.REDIS_HOST,
+                            port=settings.REDIS_PORT)
 cache = RedisCache(redis.Redis(connection_pool=pool))
 session = cachecontrol.CacheControl(requests.Session(), cache)
 session.verify = False
