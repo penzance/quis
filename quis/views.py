@@ -1,4 +1,6 @@
+import collections
 import warnings
+from concurrent import futures
 
 import requests
 from django.conf import settings
@@ -6,17 +8,36 @@ from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 
 
+# TODO: cache invididual watchman responses
+# TODO: indicate age of watchman responses
+# TODO: mechanism to bubble up details from individual services?
+# TODO: would list of (env, project, result) be easier to handle?
+
+
 @require_http_methods(['GET'])
 def index(request):
     config = settings.WATCHMEN
-    watchmen = {}
-    for env in config:
-        watchmen[env] = []
-        for project, url in config[env].iteritems():
-            watchmen[env].append((project, get_watchman_data(url)))
-        watchmen[env].sort()
+    with futures.ThreadPoolExecutor(max_workers=5) as executor:
+        future_to_bucket = {}
+        for env in config:
+            for project, url in config[env].iteritems():
+                future = executor.submit(get_watchman_data, url)
+                future_to_bucket[future] = (env, project)
 
-    return render(request, 'quis/index.html', {'watchmen': watchmen})
+        watchmen = collections.defaultdict(list)
+        for future in futures.as_completed(future_to_bucket):
+            env, project = future_to_bucket[future]
+            try:
+                result = future.result()
+            except Exception as e:
+                logger.exception('unable to get status for %s, %s',
+                                 env, project)
+                result = []
+            watchmen[env].append((project, result))
+
+    for env in watchmen:
+        watchmen[env].sort()
+    return render(request, 'quis/index.html', {'watchmen': dict(watchmen)})
 
 
 def get_watchman_data(url):
@@ -33,7 +54,7 @@ def get_watchman_data(url):
     try:
         with warnings.catch_warnings(
                 requests.packages.urllib3.exceptions.InsecureRequestWarning):
-            response = requests.get(url, verify=False)
+            response = requests.get(url, verify=False, timeout=5)
         watchman = response.json()
     except requests.exceptions.RequestException:
         watchman = {}
