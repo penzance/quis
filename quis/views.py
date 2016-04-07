@@ -7,6 +7,7 @@ import redis
 import requests
 import cachecontrol
 from cachecontrol.caches import RedisCache
+from cachecontrol.heuristics import ExpiresAfter
 from django.conf import settings
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
@@ -19,7 +20,8 @@ logger = logging.getLogger(__name__)
 pool = redis.ConnectionPool(host=settings.REDIS_HOST,
                             port=settings.REDIS_PORT)
 cache = RedisCache(redis.Redis(connection_pool=pool))
-session = cachecontrol.CacheControl(requests.Session(), cache)
+session = cachecontrol.CacheControl(requests.Session(), cache,
+                                    heuristic=ExpiresAfter(seconds=30))
 session.verify = False
 
 
